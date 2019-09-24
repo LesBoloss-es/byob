@@ -31,8 +31,12 @@ extract () {
 
 read -r line
 while read -r line; do
-  echo -e "$MESSAGE_COLOR$line$WHITE"
+  printf '%b%s%b\n' "$MESSAGE_COLOR" "$line" "$WHITE"
   info="$(parse_line "$line")"
-  extract $info
+  filename="$(echo "$info" | cut -d' ' -f1)"
+  line="$(echo "$info" | cut -d' ' -f2)"
+  b="$(echo "$info" | cut -d' ' -f3)"
+  e="$(echo "$info" | cut -d' ' -f4)"
+  extract "$filename" "$line" "$b" "$e"
   echo
 done
