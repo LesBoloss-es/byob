@@ -1,5 +1,5 @@
-all:
-	ocamlopt -g -o a.out test.ml && OCAMLRUNPARAM=b ./a.out 2>&1 | sh bof.sh
+demo:
+	ocamlopt -g -o test test.ml && OCAMLRUNPARAM=b ./test 2>&1 | ./byob
 
 clean:
-	rm -f *.cm[iox] *.o a.out
+	rm -f *.cm[iox] *.o test
