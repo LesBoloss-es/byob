@@ -2,6 +2,7 @@
 
 FAIL_COLOR='\033[31m'
 MESSAGE_COLOR='\033[34;1m'  # bold blue
+NUMBER_COLOR='\033[32m'
 WHITE='\033[0m'
 
 
@@ -14,19 +15,32 @@ underline () {
   e="$2"
   printf '%*s' "$b" ' '
   printf "%b" "$FAIL_COLOR"
-  printf '%*s' "$((e - b))" ' ' | tr ' ' '^'
+  printf '%*s\n' "$((e - b))" ' ' | tr ' ' '^'
   printf "%b" "$WHITE"
 }
 
+# filename -> line number -> line
+file_get_line () {
+  tail -n+"$2" "$1" | head -n1
+}
+
 extract () {
-  offset=1
   filename="$1"
-  line="$2"
+  line_number="$2"
+  offset=2
+  start=$((line_number - offset))
+  end=$((line_number + offset))
   if [ ! -e "$filename" ]; then
     filename="$(ocamlc -where)/$filename"
   fi
-  tail -n+"$((line - offset))" "$filename" | head -n"$((1 + offset))"
-  underline "$3" "$4"
+  for i in $(seq "$start" "$end"); do
+    printf '%b%d%b:' "$NUMBER_COLOR" "$i" "$WHITE"
+    file_get_line "$filename" "$i"
+    if [ "$i" = "$line_number" ]; then
+      printf '%*s' $((${#i} + 1)) ' '
+      underline "$b" "$e"
+    fi
+  done
 }
 
 read -r line
