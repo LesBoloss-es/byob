@@ -10,15 +10,6 @@ parse_line () {
   echo "$1" | sed 's/^.*"\([^"]*\)".*line \([0-9][0-9]*\).*characters \([0-9][0-9]*\)-\([0-9][0-9]*\).*$/\1 \2 \3 \4/'
 }
 
-underline () {
-  b="$1"
-  e="$2"
-  printf '%*s' "$b" ' '
-  printf "%b" "$FAIL_COLOR"
-  printf '%*s\n' "$((e - b))" ' ' | tr ' ' '^'
-  printf "%b" "$WHITE"
-}
-
 # line -> start_hl -> end_hl -> line
 highlight_slice () {
   hl_line="$1"
