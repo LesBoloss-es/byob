@@ -19,6 +19,22 @@ underline () {
   printf "%b" "$WHITE"
 }
 
+# line -> start_hl -> end_hl -> line
+highlight_slice () {
+  hl_line="$1"
+  start_hl="$2"
+  end_hl="$3"
+
+  if [ 0 != "$start_hl" ]; then
+    printf '%s' "$(echo "$hl_line" | cut -c"1-$((start_hl - 1))")"
+  fi
+  printf '%b%s%b' "$FAIL_COLOR" "$(echo "$hl_line" | cut -c"$start_hl-$end_hl")" "$WHITE"
+  if [ "$end_hl" != "$((${#hl_line}))" ]; then
+    printf '%s' "$(echo "$hl_line" | cut -c"$((end_hl + 1))-$((${#hl_line}))")"
+  fi
+  printf '\n'
+}
+
 # filename -> line number -> line
 file_get_line () {
   tail -n+"$2" "$1" | head -n1
@@ -27,6 +43,8 @@ file_get_line () {
 extract () {
   filename="$1"
   line_number="$2"
+  b="$3"
+  e="$4"
   offset=2
   start=$((line_number - offset))
   end=$((line_number + offset))
@@ -35,10 +53,11 @@ extract () {
   fi
   for i in $(seq "$start" "$end"); do
     printf '%b%d%b:' "$NUMBER_COLOR" "$i" "$WHITE"
-    file_get_line "$filename" "$i"
+    line="$(file_get_line "$filename" "$i")"
     if [ "$i" = "$line_number" ]; then
-      printf '%*s' $((${#i} + 1)) ' '
-      underline "$b" "$e"
+      highlight_slice "$line" "$b" "$e"
+    else
+      echo "$line"
     fi
   done
 }
