@@ -5,9 +5,21 @@ MESSAGE_COLOR='\033[34;1m'  # bold blue
 NUMBER_COLOR='\033[32m'
 WHITE='\033[0m'
 
-
 parse_line () {
   echo "$1" | sed 's/^.*"\([^"]*\)".*line \([0-9][0-9]*\).*characters \([0-9][0-9]*\)-\([0-9][0-9]*\).*$/\1 \2 \3 \4/'
+}
+
+ocaml_lib_dirs=". $(ocamlc -where)"
+
+search_in_path () {
+  for dir in $ocaml_lib_dirs; do
+    if [ -e "$dir/$1" ]; then
+      echo "$dir/$1"
+      break
+    fi
+  done
+
+  echo ""
 }
 
 # line -> start_hl -> end_hl -> line
@@ -32,25 +44,27 @@ file_get_line () {
 }
 
 extract () {
-  filename="$1"
+  filename="$(search_in_path "$1")"
   line_number="$2"
   b="$3"
   e="$4"
   offset=2
   start=$((line_number - offset))
   end=$((line_number + offset))
-  if [ ! -e "$filename" ]; then
-    filename="$(ocamlc -where)/$filename"
+
+  if [ "$filename" != "" ]; then
+    for i in $(seq "$start" "$end"); do
+      printf '%b%d%b:' "$NUMBER_COLOR" "$i" "$WHITE"
+      line="$(file_get_line "$filename" "$i")"
+      if [ "$i" = "$line_number" ]; then
+        highlight_slice "$line" "$b" "$e"
+      else
+        echo "$line"
+      fi
+    done
+  else
+    echo "<file $1 not found>"
   fi
-  for i in $(seq "$start" "$end"); do
-    printf '%b%d%b:' "$NUMBER_COLOR" "$i" "$WHITE"
-    line="$(file_get_line "$filename" "$i")"
-    if [ "$i" = "$line_number" ]; then
-      highlight_slice "$line" "$b" "$e"
-    else
-      echo "$line"
-    fi
-  done
 }
 
 read -r line
