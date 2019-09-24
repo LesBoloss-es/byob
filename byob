@@ -4,6 +4,7 @@ FAIL_COLOR='\033[31m'
 MESSAGE_COLOR='\033[34;1m'  # bold blue
 NUMBER_COLOR='\033[32m'
 WHITE='\033[0m'
+DEFAULT_OFFSET=1  # portion of the file to show
 
 parse_line () {
   echo "$1" | sed 's/^.*"\([^"]*\)".*line \([0-9][0-9]*\).*characters \([0-9][0-9]*\)-\([0-9][0-9]*\).*$/\1 \2 \3 \4/'
@@ -48,7 +49,7 @@ extract () {
   line_number="$2"
   b="$3"
   e="$4"
-  offset=2
+  offset=$DEFAULT_OFFSET
   start=$((line_number - offset))
   end=$((line_number + offset))
 
