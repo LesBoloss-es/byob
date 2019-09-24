@@ -1,17 +1,37 @@
 #!/bin/sh
 
+## Customisation ############
+
 FAIL_COLOR='\033[31m'
 MESSAGE_COLOR='\033[34;1m'  # bold blue
 NUMBER_COLOR='\033[32m'
 WHITE='\033[0m'
 DEFAULT_OFFSET=1  # portion of the file to show
 
-parse_line () {
-  echo "$1" | sed 's/^.*"\([^"]*\)".*line \([0-9][0-9]*\).*characters \([0-9][0-9]*\)-\([0-9][0-9]*\).*$/\1 \2 \3 \4/'
+## Command line options #####
+
+print_usage () {
+  echo "usage: $0 [-I LIB_DIR1 -I LIB_DIR2 ...]"
 }
 
 ocaml_lib_dirs=". $(ocamlc -where)"
 
+while getopts :I: option
+do
+  case "$option" in
+    I) ocaml_lib_dirs="$ocaml_lib_dirs $OPTARG" ;;
+    *) echo "Invalid option"; usage; exit 1 ;;
+  esac
+done
+
+## Helper functions #########
+
+# Parse one backtrace line
+parse_line () {
+  echo "$1" | sed 's/^.*"\([^"]*\)".*line \([0-9][0-9]*\).*characters \([0-9][0-9]*\)-\([0-9][0-9]*\).*$/\1 \2 \3 \4/'
+}
+
+# Search a file in the (known) OCaml library path
 search_in_path () {
   for dir in $ocaml_lib_dirs; do
     if [ -e "$dir/$1" ]; then
@@ -23,7 +43,7 @@ search_in_path () {
   echo ""
 }
 
-# line -> start_hl -> end_hl -> line
+# Highlight a portion of a line in $FAIL_COLOR
 highlight_slice () {
   hl_line="$1"
   start_hl="$2"
@@ -39,12 +59,15 @@ highlight_slice () {
   printf '\n'
 }
 
-# filename -> line number -> line
+# Get one line of a file
+# XXX. I think this is very inefficient
 file_get_line () {
   tail -n+"$2" "$1" | head -n1
 }
 
-extract () {
+## Core of the script #######
+
+fancy_rendering () {
   filename="$(search_in_path "$1")"
   line_number="$2"
   b="$3"
@@ -76,6 +99,6 @@ while read -r line; do
   line="$(echo "$info" | cut -d' ' -f2)"
   b="$(echo "$info" | cut -d' ' -f3)"
   e="$(echo "$info" | cut -d' ' -f4)"
-  extract "$filename" "$line" "$b" "$e"
+  fancy_rendering "$filename" "$line" "$b" "$e"
   echo
 done
