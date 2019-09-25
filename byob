@@ -28,16 +28,10 @@ done
 
 # Parse one backtrace line
 parse_line () {
-  echo "$1" | sed 's/^.*file "\([^"]*\)".*line \([0-9][0-9]*\).*characters \([0-9][0-9]*\)-\([0-9][0-9]*\).*$/\1 \2 \3 \4/'
-}
-
-is_an_integer () {
-  n="$1"
-  [ "$((n))" = "$n" ]
-}
-
-parsing_was_successful () {
-  is_an_integer "$2" && is_an_integer "$3" && is_an_integer "$4"
+  regex='^.*[Ff]ile "\([^"]*\)".*line \([0-9][0-9]*\).*characters \([0-9][0-9]*\)-\([0-9][0-9]*\).*$'
+  info="$(echo "$1" | grep -q "$regex" \
+    && echo "$1" | sed "s/$regex/\\1 \\2 \\3 \\4/" \
+    2>/dev/null)"
 }
 
 # Search a file in the (known) OCaml library path
@@ -103,29 +97,25 @@ fancy_rendering () {
 }
 
 while read -r line; do
-  if echo "$line" | grep -q '^Fatal error: exception'; then
-    error_name="$(echo "$line" | sed 's/Fatal error: exception (\(.*\))$/\1/')"
-    printf '%bFatal error: exception (%b%s%b)%b\n' \
+  if echo "$line" | grep -q '^Fatal error: exception [^F].*'; then
+    error_name="$(echo "$line" | sed 's/Fatal error: exception \(.*\)$/\1/')"
+    printf '%b** Fatal error: exception %b%s%b **%b\n' \
       "$MESSAGE_COLOR" \
       "$FAIL_COLOR" "$error_name" "$MESSAGE_COLOR" \
       "$WHITE"
     continue
   fi
 
-  info="$(parse_line "$line")"
-  # Check if the parsing was successful
-  if [ "$(echo "$info" | wc -w)" = 4 ]; then
+  info='' # variable set by parse_line
+          # yes I know, this is ugly
+  if parse_line "$line"; then
     filename="$(echo "$info" | cut -d' ' -f1)"
     line_nb="$(echo "$info" | cut -d' ' -f2)"
     b="$(echo "$info" | cut -d' ' -f3)"
     e="$(echo "$info" | cut -d' ' -f4)"
-    if parsing_was_successful "$filename" "$line_nb" "$b" "$e"; then
-      printf '%b%s%b\n' "$MESSAGE_COLOR" "$line" "$WHITE"
-      fancy_rendering "$filename" "$line_nb" "$b" "$e"
-      echo
-    else
-      echo "$line"
-    fi
+    printf '%b%s%b\n' "$MESSAGE_COLOR" "$line" "$WHITE"
+    fancy_rendering "$filename" "$line_nb" "$b" "$e"
+    echo
   else
     echo "$line"
   fi
