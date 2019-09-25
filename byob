@@ -4,7 +4,6 @@
 
 FAIL_COLOR='\033[31m'
 MESSAGE_COLOR='\033[34;1m'  # bold blue
-NUMBER_COLOR='\033[32m'
 WHITE='\033[0m'
 DEFAULT_OFFSET=1  # portion of the file to show
 
@@ -46,30 +45,6 @@ search_in_path () {
   echo ""
 }
 
-# Highlight a portion of a line in $FAIL_COLOR
-highlight_slice () {
-  hl_line="$1"
-  start_hl="$2"
-  end_hl="$3"
-
-  if [ 0 != "$start_hl" ]; then
-    printf '%s' "$(echo "$hl_line" | cut -c"1-$((start_hl))")"
-  fi
-  printf '%b%s%b' "$FAIL_COLOR" "$(echo "$hl_line" | cut -c"$((start_hl+1))-$end_hl")" "$WHITE"
-  if [ "$end_hl" -lt "$((${#hl_line}))" ]; then
-    printf '%s' "$(echo "$hl_line" | cut -c"$((end_hl + 1))-$((${#hl_line}))")"
-  elif [ "$end_hl" -gt "$((${#hl_line}))" ]; then
-    printf '%b%s%b' "$FAIL_COLOR" "…" "$WHITE"
-  fi
-  printf '\n'
-}
-
-# Get one line of a file
-# XXX. I think this is very inefficient
-file_get_line () {
-  tail -n+"$2" "$1" | head -n1
-}
-
 ## Core of the script #######
 
 fancy_rendering () {
@@ -82,15 +57,7 @@ fancy_rendering () {
   end=$((line_number + offset))
 
   if [ "$filename" != "" ]; then
-    for i in $(seq "$start" "$end"); do
-      printf '%b%d%b:' "$NUMBER_COLOR" "$i" "$WHITE"
-      line="$(file_get_line "$filename" "$i")"
-      if [ "$i" = "$line_number" ]; then
-        highlight_slice "$line" "$b" "$e"
-      else
-        echo "$line"
-      fi
-    done
+    bat -H "$line_number" -n -r "$start:$end" "$filename"
   else
     echo "<file $1 not found>"
   fi
