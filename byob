@@ -102,8 +102,16 @@ fancy_rendering () {
   fi
 }
 
-read -r line
 while read -r line; do
+  if echo "$line" | grep -q '^Fatal error: exception'; then
+    error_name="$(echo "$line" | sed 's/Fatal error: exception (\(.*\))$/\1/')"
+    printf '%bFatal error: exception (%b%s%b)%b\n' \
+      "$MESSAGE_COLOR" \
+      "$FAIL_COLOR" "$error_name" "$MESSAGE_COLOR" \
+      "$WHITE"
+    continue
+  fi
+
   info="$(parse_line "$line")"
   # Check if the parsing was successful
   if [ "$(echo "$info" | wc -w)" = 4 ]; then
