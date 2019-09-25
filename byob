@@ -62,8 +62,10 @@ highlight_slice () {
     printf '%s' "$(echo "$hl_line" | cut -c"1-$((start_hl - 1))")"
   fi
   printf '%b%s%b' "$FAIL_COLOR" "$(echo "$hl_line" | cut -c"$start_hl-$end_hl")" "$WHITE"
-  if [ "$end_hl" != "$((${#hl_line}))" ]; then
+  if [ "$end_hl" -lt "$((${#hl_line}))" ]; then
     printf '%s' "$(echo "$hl_line" | cut -c"$((end_hl + 1))-$((${#hl_line}))")"
+  elif [ "$end_hl" -gt "$((${#hl_line}))" ]; then
+    printf '%b%s%b' "$FAIL_COLOR" "…" "$WHITE"
   fi
   printf '\n'
 }
